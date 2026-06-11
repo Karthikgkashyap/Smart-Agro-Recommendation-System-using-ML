@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriSmart AI — Crop Recommendation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="noise"></div>
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="brand-dot"></div>
+      <span class="brand-name">AgriSmart <em>AI</em></span>
+    </div>
+    <div class="header-badge">
+      <span class="badge-dot"></span>
+      <span>99.32% Accuracy · Random Forest</span>
+    </div>
+    <nav class="header-nav">
+      <button class="nav-btn active" data-tab="predict">Predict</button>
+      <button class="nav-btn" data-tab="history">History</button>
+      <button class="nav-btn" data-tab="insights">Insights</button>
+    </nav>
+  </header>
+
+  <!-- ── MAIN ── -->
+  <main class="app">
+    <img src="{{ url_for('static', filename='images/Prediction picture.jpeg') }}" alt="Prediction Image">
+    <!-- ══ TAB: PREDICT ══ -->
+    <section class="tab-section active" id="tab-predict">
+      <div class="predict-layout">
+        <!-- Left: Form -->
+        <div class="card form-card">
+          <div class="card-label">SOIL & CLIMATE PARAMETERS</div>
+          <h2 class="card-title">Enter Your Field Data</h2>
+
+          <form id="prediction-form">
+            <div class="field-grid">
+
+              <div class="field-group">
+                <label>Nitrogen (N) <span class="unit">ratio</span></label>
+                <div class="field-wrap">
+                  <span class="field-icon"><i class="ph ph-atom"></i></span>
+                  <input type="number" step="any" id="N" name="N" placeholder="e.g. 90" required>
+                  <span class="field-range">0–140</span>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label>Phosphorus (P) <span class="unit">ratio</span></label>
+                <div class="field-wrap">
+                  <span class="field-icon"><i class="ph ph-flask"></i></span>
+                  <input type="number" step="any" id="P" name="P" placeholder="e.g. 42" required>
+                  <span class="field-range">5–145</span>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label>Potassium (K) <span class="unit">ratio</span></label>
+                <div class="field-wrap">
+                  <span class="field-icon"><i class="ph ph-flask"></i></span>
+                  <input type="number" step="any" id="K" name="K" placeholder="e.g. 43" required>
+                  <span class="field-range">5–205</span>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label>Temperature <span class="unit">°C</span></label>
+                <div class="field-wrap">
+                  <span class="field-icon"><i class="ph ph-thermometer-hot"></i></span>
+                  <input type="number" step="any" id="temperature" name="temperature" placeholder="e.g. 25" required>
+                  <span class="field-range">8–44°</span>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label>Humidity <span class="unit">%</span></label>
+                <div class="field-wrap">
+                  <span class="field-icon"><i class="ph ph-drop"></i></span>
+                  <input type="number" step="any" id="humidity" name="humidity" placeholder="e.g. 82" required>
+                  <span class="field-range">14–100%</span>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label>Soil pH <span class="unit">0–14</span></label>
+                <div class="field-wrap">
+                  <span class="field-icon"><i class="ph ph-test-tube"></i></span>
+                  <input type="number" step="any" id="ph" name="ph" placeholder="e.g. 6.5" required>
+                  <span class="field-range">3.5–10</span>
+                </div>
+              </div>
+
+              <div class="field-group full-width">
+                <label>Rainfall <span class="unit">mm</span></label>
+                <div class="field-wrap">
+                  <span class="field-icon"><i class="ph ph-cloud-rain"></i></span>
+                  <input type="number" step="any" id="rainfall" name="rainfall" placeholder="e.g. 200" required>
+                  <span class="field-range">20–300mm</span>
+                </div>
+              </div>
+
+              <div class="field-group full-width">
+                <label>Weather Location <span class="unit">optional</span></label>
+                <div class="field-wrap">
+                  <span class="field-icon"><i class="ph ph-map-pin"></i></span>
+                  <input type="text" id="location" name="location" placeholder="e.g. Mumbai, IN">
+                </div>
+              </div>
+
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-secondary" id="fetch-weather">
+                <i class="ph ph-sun"></i> Use Weather Data
+              </button>
+              <button type="button" class="btn-secondary" id="fill-demo">
+                <i class="ph ph-lightning"></i> Demo Values
+              </button>
+              <button type="submit" class="btn-primary" id="submit-btn">
+                <span>Analyse & Predict</span>
+                <i class="ph-bold ph-arrow-right"></i>
+              </button>
+            </div>
+            <div id="weather-message" class="message hidden" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <!-- Right: Results -->
+        <div class="results-col">
+
+          <!-- Main result card -->
+          <div class="card result-card" id="result-card">
+            <!-- Placeholder -->
+            <div id="state-idle" class="result-state">
+              <div class="idle-icon">🌱</div>
+              <p class="idle-text">Fill in the parameters<br>to get your recommendation</p>
+            </div>
+            <!-- Loading -->
+            <div id="state-loading" class="result-state hidden">
+              <div class="loader-ring"></div>
+              <p class="loader-text">Analysing soil data…</p>
+            </div>
+            <!-- Result -->
+            <div id="state-result" class="result-state hidden">
+              <div class="result-emoji" id="result-emoji">🌾</div>
+              <div class="result-label-tag">BEST CROP FOR YOUR FIELD</div>
+              <h1 class="result-crop" id="result-crop">Rice</h1>
+              <div class="confidence-bar-wrap">
+                <div class="confidence-label">
+                  <span>AI Confidence</span>
+                  <span id="confidence-pct">99%</span>
+                </div>
+                <div class="confidence-track">
+                  <div class="confidence-fill" id="confidence-fill"></div>
+                </div>
+              </div>
+              <div class="crop-meta" id="crop-meta">
+                <div class="meta-chip"><i class="ph ph-sun"></i><span id="meta-season">Kharif</span></div>
+                <div class="meta-chip"><i class="ph ph-drop"></i><span id="meta-water">High water</span></div>
+              </div>
+              <p class="crop-tip" id="crop-tip"></p>
+            </div>
+          </div>
+
+          <!-- Top 5 alternatives -->
+          <div class="card alt-card hidden" id="alt-card">
+            <div class="card-label">ALTERNATIVE CROPS</div>
+            <div id="top5-list" class="top5-list"></div>
+          </div>
+
+          <!-- Feature importance chart -->
+          <div class="card chart-card hidden" id="chart-card">
+            <div class="card-label">WHAT INFLUENCED THIS PREDICTION</div>
+            <canvas id="importance-chart" height="160"></canvas>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ TAB: HISTORY ══ -->
+    <section class="tab-section" id="tab-history">
+      <img src="{{ url_for('static', filename='images/History picture.jpeg') }}" alt="History Image">
+      <div class="history-layout">
+        <div class="card history-card">
+          <div class="card-label">PREDICTION HISTORY</div>
+          <h2 class="card-title">Recent Analyses</h2>
+          <div id="history-list" class="history-list">
+            <div class="empty-state">
+              <i class="ph ph-clock-counter-clockwise"></i>
+              <p>No predictions yet. Make your first one!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ TAB: INSIGHTS ══ -->
+    <section class="tab-section" id="tab-insights">
+      <img src="{{ url_for('static', filename='images/Insights picture.jpeg') }}" alt="Insights Image">
+      <div class="insights-layout">
+        <div class="card insights-card">
+          <div class="card-label">DATASET INSIGHTS</div>
+          <h2 class="card-title">Crop Distribution</h2>
+          <canvas id="crop-chart" height="300"></canvas>
+        </div>
+        <div class="card feature-guide-card">
+          <div class="card-label">PARAMETER GUIDE</div>
+          <h2 class="card-title">Understanding Your Inputs</h2>
+          <div class="guide-list">
+            <div class="guide-item">
+              <div class="guide-icon" style="background:#fef3c7;color:#d97706"><i class="ph-fill ph-atom"></i></div>
+              <div><strong>Nitrogen (N)</strong><p>Essential for leaf growth and chlorophyll. High N favours leafy crops like rice and jute.</p></div>
+            </div>
+            <div class="guide-item">
+              <div class="guide-icon" style="background:#fce7f3;color:#db2777"><i class="ph-fill ph-flask"></i></div>
+              <div><strong>Phosphorus (P)</strong><p>Promotes root development and flowering. Critical for legumes and fruit crops.</p></div>
+            </div>
+            <div class="guide-item">
+              <div class="guide-icon" style="background:#ede9fe;color:#7c3aed"><i class="ph-fill ph-flask"></i></div>
+              <div><strong>Potassium (K)</strong><p>Regulates water uptake and disease resistance. High K benefits cotton and bananas.</p></div>
+            </div>
+            <div class="guide-item">
+              <div class="guide-icon" style="background:#fee2e2;color:#dc2626"><i class="ph-fill ph-thermometer-hot"></i></div>
+              <div><strong>Temperature</strong><p>The most climate-sensitive parameter. Tropical crops need >25°C; temperate crops prefer 10–20°C.</p></div>
+            </div>
+            <div class="guide-item">
+              <div class="guide-icon" style="background:#dbeafe;color:#2563eb"><i class="ph-fill ph-drop"></i></div>
+              <div><strong>Humidity</strong><p>High humidity suits rice, jute, and coconut. Low humidity favours chickpea and lentils.</p></div>
+            </div>
+            <div class="guide-item">
+              <div class="guide-icon" style="background:#d1fae5;color:#059669"><i class="ph-fill ph-test-tube"></i></div>
+              <div><strong>Soil pH</strong><p>Most crops prefer 6–7. Blueberries like acidic (4.5); some crops tolerate alkaline (>7.5).</p></div>
+            </div>
+            <div class="guide-item">
+              <div class="guide-icon" style="background:#e0f2fe;color:#0284c7"><i class="ph-fill ph-cloud-rain"></i></div>
+              <div><strong>Rainfall</strong><p>The #1 predictor in this model. Rice needs 200mm+; mungbean thrives under 40mm.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  
+  <!-- ── FLOATING CHATBOT WIDGET ── -->
+  <button class="chatbot-toggle" id="chatbot-toggle" aria-label="Open agricultural assistant" title="AgriSmart AI Assistant">
+    <i class="ph ph-chat-circle-dots"></i>
+    <span class="chatbot-pulse"></span>
+  </button>
+
+  <div class="chatbot-container" id="chatbot-container">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar"><i class="ph-fill ph-plant"></i></div>
+        <div>
+          <h3>AgriSmart Advisor</h3>
+          <span class="chat-status" id="chat-status"><span class="status-dot"></span>Online</span>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <button class="chat-action-btn" id="chat-settings" title="Chat Settings"><i class="ph ph-gear"></i></button>
+        <button class="chat-action-btn" id="chat-theme-toggle" title="Toggle Chat Theme"><i class="ph ph-moon"></i></button>
+        <button class="chat-action-btn" id="chat-clear" title="Clear Conversation"><i class="ph ph-trash"></i></button>
+        <button class="chat-action-btn" id="chat-close" title="Minimize Chat"><i class="ph ph-caret-down"></i></button>
+      </div>
+    </div>
+
+    <!-- Chat settings panel -->
+    <div class="chat-settings-panel" id="chat-settings-panel">
+      <h4>Chatbot API Settings</h4>
+      <div class="settings-field">
+        <label for="gemini-key-input">Gemini API Key</label>
+        <input type="password" id="gemini-key-input" placeholder="Enter Gemini API key...">
+      </div>
+      <div class="settings-field">
+        <label for="openai-key-input">OpenAI API Key</label>
+        <input type="password" id="openai-key-input" placeholder="Enter OpenAI API key...">
+      </div>
+      <div class="settings-actions">
+        <button id="settings-save-btn" class="settings-btn btn-save">Save Settings</button>
+        <button id="settings-close-btn" class="settings-btn btn-close">Close</button>
+      </div>
+    </div>
+    
+    <div class="chat-body" id="chat-body">
+      <div class="chat-message bot-msg">
+        <div class="chat-bubble">
+          Welcome to AgriSmart AI Advisor! 🌾 I can help you with crop recommendations, soil health, fertilizer balances, pest management, and weather impacts. Ask me anything!
+        </div>
+        <span class="chat-time">Just now</span>
+      </div>
+    </div>
+
+    <!-- Suggested Quick Questions -->
+    <div class="chat-suggestions-container">
+      <div class="suggestions-label">SUGGESTED QUESTIONS</div>
+      <div class="chat-suggestions" id="chat-suggestions">
+        <button class="suggestion-chip">Best crops for clay soil?</button>
+        <button class="suggestion-chip">Fertilizer tips for Rice</button>
+        <button class="suggestion-chip">How to improve crop yield?</button>
+        <button class="suggestion-chip">Organic pest control methods</button>
+        <button class="suggestion-chip">How does soil pH affect growth?</button>
+        <button class="suggestion-chip">Irrigation systems for dry season</button>
+      </div>
+    </div>
+    
+    <div class="chat-footer">
+      <div class="chat-input-wrap">
+        <input type="text" id="chat-input" placeholder="Ask a farming question..." autocomplete="off">
+        <button class="chat-icon-btn" id="chat-voice" title="Speak (Voice Input)">
+          <i class="ph ph-microphone"></i>
+        </button>
+      </div>
+      <button class="chat-send-btn" id="chat-send" aria-label="Send message">
+        <i class="ph-fill ph-paper-plane-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
